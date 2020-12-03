@@ -18,7 +18,7 @@
 # The following environment variables are read from pid 1, which means they must be ENV in docker
 # or exported in the ENTRYPOINT implementation:
 # * HEALTHCHECK_KIND - must be "http" or "tcp". Defaults to "http"
-#   * When "http" the GET path to check is /health
+#   * When "http" the GET path to check is /health unless overridden by HEALTHCHECK_PATH
 # * HEALTHCHECK_IP - Defaults to $(hostname -i || 127.0.0.1)
 # * HEALTHCHECK_PORT - Not always the service port, but in Zipkin it typically is. No default
 #
@@ -42,9 +42,9 @@ port=${HEALTHCHECK_PORT?-is required}
 
 case ${kind} in
   http )
-    endpoint=http://${ip}:${port}/health
+    endpoint="http://${ip}:${port}${HEALTHCHECK_PATH:-/health}"
     # Use b3:0 to ensure health checks aren't traced
-    out=$(wget -qO- ${endpoint} --header=b3:0 2>&1)
+    out=$(wget -qO- "${endpoint}" --header=b3:0 2>&1)
     rc=$?
     ;;
   tcp )
