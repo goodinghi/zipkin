@@ -19,6 +19,11 @@
 # Dockerfile instructions to WORKDIR
 set -eu
 
+# Configure the Docker HEALTHCHECK
+export HEALTHCHECK_IP=${IP}
+export HEALTHCHECK_PORT=3306
+export HEALTHCHECK_KIND=tcp
+
 echo Starting MySQL
 MYSQL_OPTS="--user=mysql --basedir=${PWD} --datadir=${PWD}/data --tmpdir=/tmp"
 exec mysqld_safe ${MYSQL_OPTS}

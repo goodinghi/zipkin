@@ -13,19 +13,10 @@
 # the License.
 #
 
-# HEALTHCHECK for use in `docker ps` or `docker-compose ps`.
-# It can also be used as a readiness probe in k8s
+sed "s~proxy_pass http://localhost:9411~proxy_pass ${ZIPKIN_BASE_URL}~g" \
+ /etc/nginx/conf.d/zipkin.conf.template > /etc/nginx/nginx.conf
 
-# Fail on unset variables, but don't quit on rc!=0, so we can log what happened
-set -u +e
+# Configure the Docker HEALTHCHECK
+export HEALTHCHECK_PORT=80
 
-IP="$(hostname -i || echo '127.0.0.1')"
-
-HEALTH_OUTPUT=$(wget -qO- http://${IP}:9200/_cluster/health 2>&1)
-HEALTH_RC=$?
-if [ "$HEALTH_RC" = "0" ]; then
-  exit 0
-fi
-
-echo Elasticsearch health check failed: $HEALTH_OUTPUT
-exit 1
+exec nginx "$@"

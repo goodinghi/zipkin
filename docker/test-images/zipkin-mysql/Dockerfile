@@ -22,9 +22,10 @@ ARG alpine_version=3.12.1
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
-COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
+COPY build-bin/docker/docker-healthcheck /docker-bin/
+COPY docker/test-images/zipkin-mysql/start-mysql /docker-bin/
 COPY docker/test-images/zipkin-mysql/install.sh /install/
-COPY docker/test-images/zipkin-mysql/docker-bin/* /docker-bin/
+COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
 
 FROM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
 LABEL org.opencontainers.image.description="MySQL on Alpine Linux with Zipkin schema pre-installed"

@@ -29,7 +29,10 @@ ARG java_version=15.0.1_p9
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
-COPY . /code/
+COPY build-bin/docker/docker-healthcheck /docker-bin/
+COPY docker/test-images/zipkin-ui/start-nginx /docker-bin/
+COPY pom.xml /code/
+COPY zipkin-ui /code/
 
 # This version is only used during the install process. Try to be consistent as it reduces layers,
 # which reduces downloads.
@@ -60,8 +63,7 @@ LABEL nginx-version=$nginx_version
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-COPY --from=install /code/docker/test-images/zipkin-ui/docker-bin/ /tmp/docker-bin/
-RUN mv /tmp/docker-bin/* /usr/local/bin/ && rm -rf /tmp/docker-bin
+COPY --from=scratch /docker-bin/* /usr/local/bin/
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
 HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
 ENTRYPOINT ["start-nginx"]
