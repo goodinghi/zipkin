@@ -29,14 +29,18 @@ ARG java_version=15.0.1_p9
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
+COPY build-bin/ /build-bin/
 COPY build-bin/docker/docker-healthcheck /docker-bin/
 COPY docker/test-images/zipkin-ui/start-nginx /docker-bin/
 COPY pom.xml /code/
-COPY zipkin-ui /code/
+COPY zipkin-lens/ /code/zipkin-lens/
+COPY docker/test-images/zipkin-ui/nginx.conf /conf.d/zipkin.conf.template
 
 # This version is only used during the install process. Try to be consistent as it reduces layers,
 # which reduces downloads.
 FROM ghcr.io/openzipkin/java:${java_version} as install
+
+COPY --from=scratch /build-bin/ /build-bin/
 
 WORKDIR /code
 # Conditions aren't supported in Dockerfile instructions, so we copy source even if it isn't used.
@@ -52,7 +56,7 @@ ENV RELEASE_FROM_MAVEN_BUILD=$release_from_maven_build
 ARG version=master
 ENV VERSION=$version
 ENV MAVEN_PROJECT_BASEDIR=/code/zipkin-lens
-RUN /code/build-bin/maven/maven_build_or_unjar io.zipkin zipkin-lens ${VERSION}
+RUN /build-bin/maven/maven_build_or_unjar io.zipkin zipkin-lens ${VERSION}
 
 FROM ghcr.io/openzipkin/alpine:$alpine_version as zipkin-ui
 LABEL org.opencontainers.image.description="NGINX on Alpine Linux hosting the Zipkin UI with Zipkin API proxy_pass"
@@ -70,7 +74,7 @@ ENTRYPOINT ["start-nginx"]
 
 # Add content and setup NGINX
 COPY --from=install /install/zipkin-lens/ /var/www/html/zipkin/
-COPY --from=install /code/docker/test-images/zipkin-ui/nginx.conf /etc/nginx/conf.d/zipkin.conf.template
+COPY --from=scratch /conf.d/ /etc/nginx/conf.d/
 RUN apk add --update --no-cache nginx=~${nginx_version} && \
     mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 
