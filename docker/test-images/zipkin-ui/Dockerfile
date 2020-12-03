@@ -78,4 +78,7 @@ COPY --from=scratch /conf.d/ /etc/nginx/conf.d/
 RUN apk add --update --no-cache nginx=~${nginx_version} && \
     mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 
+# Usually, we read env set from pid 1 to get docker-healthcheck parameters. However, NGINX wipes the
+# env, so we need to expose it in the Dockerfile instead.
+ENV HEALTHCHECK_PORT=80
 EXPOSE 80
